@@ -1,0 +1,9 @@
+{
+  "name": "riskmap-2",
+  "version": "3.0.0",
+  "description": "RiskMap 2.0 — Senior Housing Risk Diagnostic | Ken Leatherman | AJ Gallagher",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}

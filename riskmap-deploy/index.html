@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RiskMap 2.0 — AJ Gallagher</title>
+<style>
+:root {
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f5f5f4;
+  --color-background-tertiary: #eeece9;
+  --color-background-info: #eff6ff;
+  --color-background-success: #f0fdf4;
+  --color-background-warning: #fffbeb;
+  --color-background-danger: #fef2f2;
+  --color-text-primary: #1c1917;
+  --color-text-secondary: #78716c;
+  --color-text-tertiary: #a8a29e;
+  --color-text-info: #1d4ed8;
+  --color-text-success: #166534;
+  --color-text-warning: #92400e;
+  --color-text-danger: #991b1b;
+  --color-border-tertiary: rgba(0,0,0,0.08);
+  --color-border-secondary: rgba(0,0,0,0.18);
+  --color-border-primary: rgba(0,0,0,0.28);
+  --color-border-info: #93c5fd;
+  --color-border-success: #86efac;
+  --color-border-warning: #fcd34d;
+  --color-border-danger: #fca5a5;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-mono: "Fira Code", "Cascadia Code", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background-primary: #1c1917;
+    --color-background-secondary: #292524;
+    --color-background-tertiary: #3c3935;
+    --color-background-info: #1e3a5f;
+    --color-background-success: #14532d;
+    --color-background-warning: #451a03;
+    --color-background-danger: #450a0a;
+    --color-text-primary: #fafaf9;
+    --color-text-secondary: #a8a29e;
+    --color-text-tertiary: #78716c;
+    --color-text-info: #93c5fd;
+    --color-text-success: #86efac;
+    --color-text-warning: #fcd34d;
+    --color-text-danger: #fca5a5;
+    --color-border-tertiary: rgba(255,255,255,0.08);
+    --color-border-secondary: rgba(255,255,255,0.16);
+    --color-border-primary: rgba(255,255,255,0.28);
+    --color-border-info: #1d4ed8;
+    --color-border-success: #166534;
+    --color-border-warning: #92400e;
+    --color-border-danger: #991b1b;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--color-background-tertiary); font-family: var(--font-sans); }
+#login-gate {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--color-background-tertiary);
+}
+.login-card {
+  background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg); padding: 40px 48px; text-align: center;
+  min-width: 360px;
+}
+.login-logo { font-family: var(--font-serif); font-size: 28px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+.login-sub { font-size: 11px; color: var(--color-text-tertiary); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 32px; }
+.login-input {
+  width: 100%; padding: 10px 14px; border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md); font-size: 14px; font-family: var(--font-sans);
+  background: var(--color-background-primary); color: var(--color-text-primary);
+  margin-bottom: 14px; text-align: center; letter-spacing: 0.08em;
+}
+.login-input:focus { outline: none; border-color: #BA7517; box-shadow: 0 0 0 2px rgba(186,117,23,0.1); }
+.login-btn {
+  width: 100%; padding: 10px; background: #BA7517; color: #fff; border: none;
+  border-radius: var(--border-radius-md); font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: var(--font-sans);
+}
+.login-btn:hover { background: #854F0B; }
+.login-err { font-size: 11px; color: var(--color-text-danger); margin-top: 10px; }
+.login-credit { font-size: 10px; color: var(--color-text-tertiary); margin-top: 24px; }
+#app-root { display: none; height: 100vh; overflow: hidden; }
+</style>
+</head>
+<body>
+
+<div id="login-gate">
+  <div class="login-card">
+    <div class="login-logo">RiskMap</div>
+    <div class="login-sub">Senior Housing Edition &middot; AJ Gallagher</div>
+    <input class="login-input" type="password" id="pwd-input" placeholder="Enter password" />
+    <button class="login-btn" onclick="checkPassword()">Enter</button>
+    <div class="login-err" id="pwd-err" style="display:none">Incorrect password</div>
+    <div class="login-credit">Ken Leatherman &middot; Senior Advisor</div>
+  </div>
+</div>
+
+<div id="app-root">
+  <div id="app"></div>
+</div>
+
+<script>
+const APP_PASSWORD = "RiskMap2025";
+
+function checkPassword() {
+  const pwd = document.getElementById("pwd-input").value;
+  const err = document.getElementById("pwd-err");
+  if (pwd === APP_PASSWORD) {
+    sessionStorage.setItem("rm_auth", "1");
+    document.getElementById("login-gate").style.display = "none";
+    document.getElementById("app-root").style.display = "block";
+  } else {
+    err.style.display = "block";
+    setTimeout(() => { err.style.display = "none"; }, 2000);
+  }
+}
+
+document.getElementById("pwd-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") checkPassword();
+});
+
+if (sessionStorage.getItem("rm_auth") === "1") {
+  document.getElementById("login-gate").style.display = "none";
+  document.getElementById("app-root").style.display = "block";
+}
+
+// Storage adapter — uses localStorage instead of window.storage
+const storage = {
+  get: async (key) => {
+    try { const v = localStorage.getItem(key); return v ? { value: v } : null; } catch(e) { return null; }
+  },
+  set: async (key, value) => {
+    try { localStorage.setItem(key, value); return { key, value }; } catch(e) { return null; }
+  }
+};
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+
+<style>
+.rm-app{display:flex;min-height:100vh;font-family:var(--font-sans)}
+.rm-sidebar{width:210px;flex-shrink:0;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column}
+.rm-logo{padding:18px 16px 14px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.rm-logo-title{font-family:var(--font-serif);font-size:20px;font-weight:500;color:var(--color-text-primary);line-height:1.1;margin:0}
+.rm-logo-sub{font-size:10px;color:var(--color-text-tertiary);letter-spacing:0.1em;text-transform:uppercase;margin-top:4px}
+.rm-nav{padding:10px 0;flex:1;overflow-y:auto}
+.rm-nav-section{padding:8px 14px 3px;font-size:10px;letter-spacing:0.09em;text-transform:uppercase;color:var(--color-text-tertiary);font-weight:500}
+.rm-nav-btn{display:flex;align-items:center;gap:8px;padding:6px 14px;font-size:12px;color:var(--color-text-secondary);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:var(--font-sans);position:relative;transition:background 0.1s}
+.rm-nav-btn:hover{background:var(--color-background-primary);color:var(--color-text-primary)}
+.rm-nav-btn.active{color:var(--color-text-primary);font-weight:500;background:var(--color-background-primary)}
+.rm-dot{width:5px;height:5px;border-radius:50%;background:var(--color-border-secondary);flex-shrink:0}
+.rm-nav-btn.active .rm-dot{background:#BA7517}
+.rm-version{padding:10px 14px;font-size:10px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary)}
+.rm-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.rm-header{padding:16px 24px 12px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.rm-header-title{font-size:16px;font-weight:500;color:var(--color-text-primary);margin:0}
+.rm-header-sub{font-size:12px;color:var(--color-text-secondary);margin:2px 0 0}
+.rm-scroll{flex:1;overflow-y:auto}
+.rm-content{padding:18px 24px}
+.btn-p{padding:7px 16px;background:#BA7517;color:#fff;border:none;border-radius:var(--border-radius-md);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font-sans);transition:background 0.15s;white-space:nowrap}
+.btn-p:hover{background:#854F0B}.btn-p:disabled{background:#B4B2A9;cursor:not-allowed}
+.btn-s{padding:7px 16px;background:none;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;cursor:pointer;font-family:var(--font-sans)}
+.btn-s:hover{background:var(--color-background-secondary)}
+.btn-sm{padding:4px 10px;background:none;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:11px;cursor:pointer;font-family:var(--font-sans)}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.stat-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px}
+.stat-val{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.tbl-wrap{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;padding:9px 14px;font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--color-text-secondary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.tbl td{padding:11px 14px;font-size:12px;color:var(--color-text-primary);border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:middle}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:var(--color-background-secondary)}
+.badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap;border:0.5px solid transparent}
+.b-amber{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.b-blue{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.b-green{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.btn-o{font-size:11px;padding:3px 10px;background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);color:var(--color-text-secondary);cursor:pointer;font-family:var(--font-sans)}
+.btn-o:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.empty-state{text-align:center;padding:50px 20px;color:var(--color-text-secondary)}
+.empty-h{font-size:14px;font-weight:500;color:var(--color-text-primary);margin:0 0 6px}
+.empty-p{font-size:12px;margin:0 0 18px}
+.form-wrap{max-width:600px}
+.fs{margin-bottom:22px;padding-bottom:22px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.fs:last-of-type{border-bottom:none;padding-bottom:0;margin-bottom:0}
+.fs-title{font-size:10px;font-weight:500;letter-spacing:0.09em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:12px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ff{display:flex;flex-direction:column;gap:4px}
+.ff.full{grid-column:1/-1}
+.fl{font-size:11px;font-weight:500;color:var(--color-text-secondary)}
+.fl.req::after{content:" *";color:var(--color-text-danger)}
+.fi{font-family:var(--font-sans);font-size:12px;color:var(--color-text-primary);background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:7px 10px;width:100%;box-sizing:border-box}
+.fi:focus{outline:none;border-color:#BA7517;box-shadow:0 0 0 2px rgba(186,117,23,0.1)}
+.fi.err{border-color:var(--color-border-danger)}
+.fe{font-size:10px;color:var(--color-text-danger)}
+.form-actions{display:flex;gap:8px;padding-top:16px;border-top:0.5px solid var(--color-border-tertiary);flex-wrap:wrap}
+.eng-banner{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.eng-banner-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.eng-banner-meta{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+.doc-section-hd{padding:7px 14px;font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-secondary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.doc-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:9px 14px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.doc-row:last-child{border-bottom:none}
+.doc-row:hover{background:var(--color-background-secondary)}
+.doc-name{font-weight:500;color:var(--color-text-primary)}
+.doc-sub{font-size:10px;color:var(--color-text-secondary);margin-top:1px}
+.crit-pill{font-size:9px;font-weight:500;padding:1px 6px;border-radius:10px;background:var(--color-background-danger);color:var(--color-text-danger);border:0.5px solid var(--color-border-danger)}
+.dsb{padding:3px 8px;font-size:10px;font-weight:500;border-radius:20px;border:0.5px solid var(--color-border-tertiary);background:none;cursor:pointer;font-family:var(--font-sans);color:var(--color-text-secondary);white-space:nowrap}
+.dsb.s-requested{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.dsb.s-received{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.dsb.s-reviewed{background:#EEEDFE;color:#3C3489;border-color:#7F77DD}
+.dsb.s-na{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.dsb.s-overdue{background:var(--color-background-danger);color:var(--color-text-danger);border-color:var(--color-border-danger)}
+.ready-bar-wrap{margin-bottom:18px}
+.ready-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;display:flex;justify-content:space-between}
+.ready-track{height:4px;background:var(--color-background-secondary);border-radius:4px;overflow:hidden}
+.ready-fill{height:100%;border-radius:4px;transition:width 0.3s}
+.dtabs{display:flex;overflow-x:auto;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:18px;gap:0}
+.dtab{padding:7px 12px;font-size:11px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-family:var(--font-sans)}
+.dtab.active{border-bottom-width:2px;border-bottom-style:solid}
+.pm-check-item{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;color:var(--color-text-secondary);cursor:pointer;line-height:1.4}
+.pm-check-item:last-child{border-bottom:none}
+.pm-check-item input{flex-shrink:0;margin-top:2px;accent-color:#BA7517;cursor:pointer}
+.pm-check-item.done{color:var(--color-text-tertiary);text-decoration:line-through}
+.pm-section{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:16px}
+.q-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:12px}
+.q-num{font-size:10px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:5px}
+.q-text{font-size:13px;color:var(--color-text-primary);margin-bottom:6px;line-height:1.5;font-weight:500}
+.q-note{font-size:11px;color:var(--color-text-secondary);font-style:italic;margin-bottom:10px;padding:6px 10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border-left:2px solid #BA7517;line-height:1.4}
+.flag-row{display:flex;gap:5px;margin-bottom:10px}
+.flag-btn{padding:3px 10px;font-size:10px;font-weight:500;border-radius:20px;border:0.5px solid var(--color-border-tertiary);cursor:pointer;font-family:var(--font-sans);background:none;color:var(--color-text-tertiary)}
+.flag-g.on{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.flag-y.on{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.flag-r.on{background:var(--color-background-danger);color:var(--color-text-danger);border-color:var(--color-border-danger)}
+.obs-item{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px 14px;margin-bottom:10px}
+.obs-text{font-size:12px;color:var(--color-text-primary);margin-bottom:8px;line-height:1.5}
+.score-table{width:100%;border-collapse:collapse;margin-bottom:18px;font-size:11px}
+.score-table th{padding:7px 10px;text-align:left;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);font-size:10px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;color:var(--color-text-secondary)}
+.score-table td{padding:8px 10px;border:0.5px solid var(--color-border-tertiary);vertical-align:top;line-height:1.4;color:var(--color-text-secondary);font-size:11px}
+.score-table td:first-child{font-weight:500;color:var(--color-text-primary);white-space:nowrap;width:130px}
+.th-h{color:#A32D2D!important}.th-m{color:#854F0B!important}.th-mg{color:#0F6E56!important}
+.sig-sum{margin-bottom:16px}
+.sig-sum-title{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:6px}
+.sig-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px}
+.sig-row:last-child{border-bottom:none}
+.sig-q{flex:1;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+.sig-badge{font-size:9px;font-weight:500;padding:2px 7px;border-radius:10px;white-space:nowrap;border:0.5px solid transparent;flex-shrink:0}
+.sig-g{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.sig-y{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.sig-r{background:var(--color-background-danger);color:var(--color-text-danger);border-color:var(--color-border-danger)}
+.rating-row{display:flex;gap:8px;margin-bottom:14px}
+.r-btn{flex:1;padding:10px 6px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;background:none;font-family:var(--font-sans);font-size:11px;font-weight:500;color:var(--color-text-secondary);text-align:center}
+.r-high.sel{background:#FCEBEB;color:#A32D2D;border-color:#E24B4A}
+.r-mod.sel{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.r-managed.sel{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.trend-row{display:flex;gap:8px;margin-bottom:14px}
+.t-btn{flex:1;padding:8px 4px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;background:none;font-family:var(--font-sans);font-size:11px;font-weight:500;color:var(--color-text-secondary);text-align:center}
+.t-btn.sel{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.sc-section{margin-bottom:18px}
+.sc-section-title{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:8px}
+.complete-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:500;background:var(--color-background-success);color:var(--color-text-success);border:0.5px solid var(--color-border-success)}
+.req-note{font-size:10px;color:var(--color-text-danger);margin-top:3px}
+.synth-rating-table{width:100%;border-collapse:collapse;margin-bottom:18px}
+.synth-rating-table th{padding:8px 12px;font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--color-text-secondary);background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);text-align:left}
+.synth-rating-table td{padding:9px 12px;border:0.5px solid var(--color-border-tertiary);font-size:12px;vertical-align:middle}
+.alert-warn{background:var(--color-background-warning);color:var(--color-text-warning);border:0.5px solid var(--color-border-warning);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:18px;font-size:11px}
+.report-section-label{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.gen-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--color-border-secondary);border-top-color:#BA7517;border-radius:50%;animation:spin 0.8s linear infinite;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gen-block{text-align:center;padding:40px 20px}
+</style>
+
+<script>
+const {useState,useEffect}=React;const h=React.createElement;
+const DOMAINS=[
+{code:"D1",name:"Care Culture & Leadership Risk",short:"Culture & Leadership",accent:"#7F77DD",sub:"The upstream variable — care culture determines outcomes in every other domain",
+preMeet:["WC frequency clustering by shift: night shift clustering = reduced supervisory coverage","Survey F-tags: clustering by unit = supervisory gap, not facility-wide culture failure","Resident/family complaint patterns: same type from different units = systemic","Administrator tenure: continuity vs. turnover in the past 24 months"],
+qs:[["Walk me through a typical day for you as administrator. When are you on the floor vs. in your office?","Leadership visibility is the single biggest predictor of care culture outcomes"],["When a care incident occurs — a fall, a medication error, a resident complaint — walk me through exactly what happens from first report to resolution.","Listen for protocol vs. whoever happens to be around"],["If I asked your CNAs what management cares most about, what would they say?","The gap between the right answer and the honest answer is your finding"],["How do you hold department heads accountable? What happens if a department head consistently underperforms?","Listen for whether consequences are real and consistent across all department heads"],["Walk me through your staffing model on a typical overnight shift. Who is the most senior person in the building at 3 a.m.?","Overnight leadership gap is where most care failures and most WC incidents originate"],["Have you had administrator or DON turnover in the last 18 months? What drove it?","Turnover at this level disrupts culture continuity in ways that take 6-12 months to recover from"],["What does your department head meeting look like? What gets covered and how often?","Listen for accountability vs. information transfer — meetings that only share data do not build culture"],["If I walked your memory care unit right now unannounced at 10 p.m., what would I see?","Watch their expression and listen for confidence vs. hesitation"],["How do you handle a resident or family complaint about a specific staff member?","The process for addressing interpersonal complaints is where EPLI and professional liability exposure live together"],["What are your biggest leadership challenges right now?","What they name first is almost always where the real engagement begins"]],
+obs:["Are common areas clean, organized, and free of odor?","Do staff acknowledge residents in passing?","Do staff acknowledge you as a visitor?","Is signage professional and current? Are regulatory postings visible and dated?","Are call light response times visible on a tracking system?","Is the administrator visible on the floor?","Do residents appear appropriately dressed, groomed, and engaged?","Is the memory care unit properly secured and supervision visible?","Are staff in appropriate attire and identifying themselves to residents?"],
+scoring:[["Administrator visibility","Office-bound; reactive to problems only","Present but unstructured; no rounding protocol","Daily structured rounding; documented"],["Overnight supervision","No licensed nurse overnight; aide-only coverage","LPN overnight; limited escalation protocol","RN or strong LPN + clear escalation protocol"],["Dept. head accountability","No formal system; personality-driven consequences","Accountability exists; applied inconsistently","Documented expectations; consistent consequences"],["Leadership turnover (18 mo.)","Admin or DON turnover; culture continuity disrupted","One departure; managed transition","Stable leadership team"],["Care culture indicators","Odor, call light backlogs, disengaged residents","Some indicators present; not systemic","Clean, engaged, staff-resident interaction positive"]],
+anchor:"Leadership in Tough Times - LITT Framework",anchorText:"The LITT Framework (Disruption to Emotion to Direction to Focus) was built for exactly this environment. Leadership in Tough Times translates the LITT Framework into practical tools for supervisory consistency at every level of the organization."},
+{code:"D2",name:"Human Capital & Workforce Risk",short:"Human Capital",accent:"#BA7517",sub:"Workers Compensation | Staffing | EPLI | Benefits Design | Turnover Cost",
+preMeet:["WC experience mod: current level and 3-year trajectory","WC injury type: MSK/resident handling = handling protocol issue","WC claim distribution by shift: night shift clustering = supervision gap","WC claim distribution by unit/location: clustering = administrator-level culture issue","Agency hours as % of total staffing hours - above 15% is a risk indicator","Benefits renewal trend: compare to market benchmark"],
+qs:[["Walk me through your workers comp experience over the last 3 years. What are the biggest claim drivers?","Let them describe it before you share what the loss run shows"],["Which units or shifts have the most workers comp activity?","If it matches your pre-meeting analysis confirm. If it does not, explore the discrepancy."],["Walk me through your safe resident handling program. What equipment do you have and how is its use enforced?","Lift equipment that exists but is not consistently used is a supervision issue not a training issue"],["What happens on day one of a workplace injury here? Walk me through the protocol from the moment someone reports an injury.","Listen for a documented protocol vs. whoever happens to be the charge nurse that day"],["Do you have a return-to-work program for injured employees? What does modified duty look like in your operation?","Care settings often say they cannot do modified duty - this is almost never true and always costs them in claim duration"],["What is your annual turnover rate for CNAs? For department heads? For administrators?","Each tier tells a different story. CNA = culture and pay. Dept head = leadership. Admin = ownership and direction."],["What is your current agency staffing dependency? What percentage of shifts are filled by agency staff?","Agency dependency above 15% is both a cost and a care quality risk indicator"],["Have you had any employment practices complaints - formal or informal - in the last 3 years?","Informal complaints that were not documented are EPLI risk sitting uninsured"],["Walk me through your new hire process - background checks, reference checks, orientation, and probationary period.","Hiring gaps are where abuse and neglect allegations begin"],["Who are your 3-5 most critical employees from an operational standpoint? What happens if they leave?","This opens the succession conversation and key-man coverage question together"],["When did you last review your health benefits plan? What drove the last change?","Operators who have not reviewed utilization in 2+ years almost always have optimization opportunities"]],
+obs:["Is lift and safe handling equipment visible, accessible, and in apparent working condition?","Do staff appear to know where lift equipment is and how to use it?","Are staff using proper body mechanics during resident care activities?","Is OSHA posting current, visible, and posted in all required languages?","Is there evidence of a safety culture - meeting boards, near-miss logs, safety officer presence?","Do staff appear appropriately staffed on the unit, or stretched thin?"],
+scoring:[["WC experience mod","Above 1.10 and worsening","1.0-1.10 or flat","Below 1.0 or improving consistently"],["Safe handling program","Equipment exists but use not enforced","Program exists; inconsistently applied","Documented program; supervisor accountability"],["Return-to-work program","No modified duty - full duty or off work","Informal modified duty; not consistently used","Formal program with defined modified duty roles"],["CNA turnover rate","Above 80% annually","50-80% annually","Below 50% annually"],["Agency dependency","Above 20% of staffing hours","10-20% of staffing hours","Below 10% of staffing hours"],["EPLI documentation","No investigation protocol; verbal only","Some documentation; inconsistent","Formal protocol; all events documented"]],
+anchor:"Whos Next - Succession Planning for Senior Housing Operations",anchorText:"In senior housing, workforce succession is not just a leadership development question - it is a regulatory compliance and census protection issue. Whos Next provides a structured framework for identifying succession gaps and building a pipeline of transition-ready leaders."},
+{code:"D3",name:"Physical Plant & Operational Risk",short:"Physical Plant",accent:"#1D9E75",sub:"Property | Life Safety | Business Continuity | Resident Environment",
+preMeet:["Property: Date of last formal appraisal vs. current construction cost benchmarks","Property: Check stated values against per-square-foot replacement cost for care facilities in this region","Property: Review business interruption limits - do they include resident relocation and care continuity costs?","Review any prior property losses and the carriers response"],
+qs:[["Walk me through your facilities - owned vs. leased, year built, any major renovations in the last 5 years.","Age + no appraisal + construction cost inflation since 2020 = almost certain coinsurance exposure"],["When were your property values last formally appraised by an independent appraiser?","Anything older than 3 years is a finding. Anything older than 5 years is a significant finding."],["What would it cost to rebuild your primary facility from the ground up today?","Their answer vs. stated value reveals the gap"],["If this building were unavailable for 90 days, what would happen to your residents?","This answer defines what your business interruption limits need to cover"],["When were your fire suppression, sprinkler, and emergency egress systems last inspected and certified?","Systems that are current on inspection vs. systems assumed to be fine are different things"],["Have you made any physical plant modifications to the memory care unit in the last 3 years?","Any modification requires an updated elopement risk assessment"],["What is your elopement risk protocol? Has it been updated following any building changes?","Elopement events are among the most severe professional liability exposures in memory care"],["Do you have a business continuity plan with defined protocols for resident relocation?","Most do not. This is both a risk management and a regulatory compliance gap."],["What are your sub-limits on your property policy for communicable disease, crisis management, and crime?","These are almost always at pre-pandemic levels and almost always inadequate"],["Have you had any property losses in the last 5 years? Walk me through the most significant one.","Their response to a prior loss tells you about their risk culture and documentation practices"]],
+obs:["Are fire extinguishers tagged and current? Are exit signs illuminated?","Is the sprinkler system visible and tagged in corridors and common areas?","Are memory care unit exits secured with appropriate delayed egress systems?","Is the physical plant well-maintained, or are there visible deferred items?","Are resident rooms and common areas free of fall hazards?","Is outdoor space secure, accessible, and maintained for resident use?","Is emergency equipment accessible, labeled, and staff-visible?"],
+scoring:[["Property valuation","No appraisal in 3+ years","Appraisal 2-3 years old; some gap possible","Current appraisal; values validated"],["Business interruption","No BI worksheet; limits not reviewed","Worksheet exists; resident relocation not included","Worksheet includes full relocation/care costs"],["Life safety systems","Unknown inspection status; assumed current","Inspected but not within required cycle","Current on all inspections; documented"],["Elopement risk (MC only)","No current assessment; changes not evaluated","Assessment exists; not recently updated","Current assessment; updated with any changes"],["Business continuity plan","No plan; no relocation protocol","Informal awareness; not documented","Documented cross-location plan; tested"]],
+anchor:"Life Safety & Property Diagnostic",anchorText:"Physical plant risk in senior housing is a combination of regulated asset management and operational vulnerability. The intersection of life safety code compliance, property valuation accuracy, and business continuity planning creates an exposure profile that requires a structured diagnostic approach."},
+{code:"D4",name:"Professional & Regulatory Liability",short:"Prof. Liability",accent:"#D85A30",sub:"Professional Liability | Abuse & Molestation | CMS Compliance | State Licensing",
+preMeet:["Professional liability: review current limits against your knowledge of recent verdicts in this jurisdiction","Review abuse and molestation sub-limit specifically for memory care operations","Survey history: pull state deficiency reports - note F-tag numbers and severity levels","Note any tags in the E-L range (actual harm or higher)","Review defense cost structure in the professional liability policy - inside vs. outside the limit"],
+qs:[["Have you had any professional liability claims, resident injury claims, or family complaints that escalated to legal counsel in the last 5 years?","Include settled matters and informal resolutions"],["Walk me through how a resident fall with injury gets handled - from the moment staff discover it to final documentation.","Listen for consistency across locations, and for whether documentation is timely and specific"],["Walk me through how a family complaint about resident care gets handled from first contact to resolution.","Inconsistent processes are the signature of organizations that settle cases they should not have to"],["Have you had any state survey citations in the last 3 years? Walk me through the most significant one and how it was resolved.","Be matter-of-fact - you have already reviewed the public record"],["Are there any open regulatory matters, conditions on your license, or pending inspections?","Open matters require disclosure and affect both coverage and carrier appetite"],["Does your resident agreement include an arbitration clause? When was it last reviewed by legal counsel?","Several states have restricted arbitration clauses for senior care - enforceability must be confirmed"],["What are your current professional liability limits and when were they last reviewed?","Limits established before 2020 are almost certainly inadequate for current jury verdict trends"],["Does your professional liability coverage include defense costs within the limit or in addition to the limit?","Inside limits is a significant structural weakness"],["What does your abuse and molestation sub-limit look like? Is it the same for all locations regardless of license type?","Memory care requires higher A&M limits than AL or IL"],["What is your incident documentation protocol? How do you ensure consistency across all locations and all shifts?","Documentation quality is the single biggest driver of claim outcomes in professional liability"]],
+obs:["Are state licenses current and posted in the required location?","Is there evidence of a quality assurance program - QA meeting calendars, QAPI documentation?","Are resident records secure and inaccessible to unauthorized personnel?","Is there a current and accessible policy and procedure manual for clinical staff?","Do staff appear aware of their mandatory reporting obligations?"],
+scoring:[["Professional liability limits","Never benchmarked; likely below current verdicts","Reviewed but not recently; may lag trends","Benchmarked within 12 months against local verdicts"],["A&M sub-limit (MC)","Standard sub-limit; no MC differentiation","Elevated sub-limit; not recently reviewed","MC-specific sub-limit; reviewed within 24 months"],["Incident documentation","No protocol; inconsistent across locations/shifts","Protocol exists; not consistently followed","Consistent, timely, clinically specific documentation"],["Survey / regulatory standing","Open matters; E-L tags; pattern citations","Resolved citations; A-D only; no pattern","Clean or minimal history; documented remediation"],["Arbitration clause status","Clause in use; enforceability not reviewed","Reviewed once; not recently confirmed","Reviewed by counsel within 24 months; confirmed valid"]],
+anchor:"Senior Housing: The AI Gap - Professional Risk in a Technology-Evolving Environment",anchorText:"The professional liability landscape in senior housing is being reshaped by the introduction of AI-assisted care tools. Senior Housing: The AI Gap addresses the governance, documentation, and liability implications of AI adoption in the care environment."},
+{code:"D5",name:"Technology & AI Governance Risk",short:"Technology & AI",accent:"#185FA5",sub:"Cyber | HIPAA | AI in Care | EHR | Monitoring Technology",
+preMeet:["Review cyber liability policy declarations - check limits, HIPAA coverage, and whether AI-related incidents are covered","Check policy date - policies issued before 2022 likely have coverage gaps for AI-related events","Note whether Business Associate Agreement documentation was required at policy issuance","Review any prior HIPAA breach notifications or cybersecurity incidents"],
+qs:[["Walk me through your electronic health record system. Which platform, how long have you used it, and who has access?","EHR platforms are the primary HIPAA risk surface in senior housing"],["Does your EHR include any decision support or AI-assisted functions - care planning recommendations, medication alerts, fall risk scoring?","Most operators do not realize their EHR is making AI-assisted recommendations"],["What other AI-enabled systems do you use - monitoring cameras, bed sensors, fall prediction, staffing optimization?","List every monitoring and optimization system - they almost all have AI components"],["Do you have a policy governing how staff use AI tools for care documentation, family communications, or shift notes?","Staff using ChatGPT to draft progress notes is a HIPAA event waiting to happen"],["When a resident has a fall or adverse event, is there any AI or monitoring system data that captures or flags the event? How is that data used?","AI-assisted fall prediction that flagged a resident before an event creates documentation liability if ignored"],["How do you handle resident and family data privacy - especially for family communication apps and portal access?","Family apps are the fastest-growing HIPAA risk surface in senior housing"],["Do you have Business Associate Agreements with all of your technology vendors, including monitoring system vendors?","Most operators have BAAs with their EHR but not with their monitoring or scheduling vendors"],["Have you had any cybersecurity incidents, HIPAA breaches, or unauthorized access events?","Include near-misses and events resolved without formal breach notification"],["What does your incident response plan look like if you have a ransomware event or data breach?","In senior housing, a ransomware event affecting the EHR is also a patient safety event"],["When was your cyber liability policy last reviewed? Do you know if it covers AI-related incidents?","AI exclusions are being added to new cyber forms - this requires specific confirmation"]],
+obs:["Are workstations logged out when unattended? (HIPAA technical safeguard requirement)","Is resident information visible on screens or printed reports in hallways or common areas?","Are monitoring systems properly labeled with required resident/family consent notices?","Is there evidence of staff using personal devices to photograph residents or access resident data?","Is the wireless network secured, or is there evidence of shared or unsecured access?"],
+scoring:[["EHR access controls","Shared logins; no audit trail awareness","Individual logins; audit capability unused","Individual logins; audit trails reviewed regularly"],["AI governance policy","No policy; AI use ungoverned across care tasks","Policy exists; not current or enforced","Current policy; staff trained; accountability defined"],["BAA coverage","BAA only with EHR vendor; others uncovered","Most vendors covered; gaps unidentified","All vendors with PHI access covered by current BAA"],["Incident response plan","No plan; would improvise","Plan exists; staff unaware or plan untested","Current plan; key staff trained; tested within 12 mo."],["Cyber policy currency (AI)","Pre-2022 policy; AI exclusions not reviewed","Reviewed; AI coverage not confirmed","Reviewed within 12 months; AI coverage confirmed"],["HIPAA safeguards","Technical safeguards inconsistently applied","Safeguards in place; gaps identified","Safeguards documented; workforce training current"]],
+anchor:"Senior Housing: The AI Gap - Governance Framework for AI in Care Environments",anchorText:"Senior Housing: The AI Gap provides a structured governance framework for understanding where AI is being used in the care environment, what the liability and regulatory implications are, and how to build the documentation and oversight structures that demonstrate responsible AI governance."},
+{code:"D6",name:"Strategic & Census Risk",short:"Strategic & Census",accent:"#3B6D11",sub:"Occupancy | Market Position | Ownership Transition | Enterprise Value",
+preMeet:["Calculate total cost of risk across all lines: premiums + retained losses + estimated admin cost","Compare total cost of risk to total revenue and total labor cost - benchmark context matters","Note current occupancy vs. the operators break-even estimate","Review any history of ownership or operator changes in the last 5 years"],
+qs:[["What is current occupancy at each location, and how does it compare to pre-pandemic levels?","The trajectory matters as much as the current number"],["What is your break-even occupancy? At what point does a locations census create operational stress?","Most operators know this intuitively but have not quantified it"],["Where do your referrals come from? Who are your top 5 referral sources?","Referral source concentration is a strategic risk"],["Have you had any census decline events in the last 3 years? How did you respond?","Their response capacity to a census event tells you about organizational resilience"],["What does ownership transition look like for this organization? Is there a succession plan at the ownership level?","Family-owned operations with no succession plan have a specific risk profile"],["Who are your 3-5 most critical operational relationships - people who if they left would affect census or regulatory standing?","DON departure + survey cycle timing = a very bad situation"],["Are there any major capital events on the horizon - acquisition, new construction, refinancing, or an ownership event?","Capital events change the risk profile and often trigger coverage gaps"],["Have you ever calculated your total cost of risk across all lines of coverage?","Offering to build this demonstrates the consulting relationship not just the placement relationship"],["Has your insurance program been benchmarked against peer operators of comparable size and license mix recently?","If no, offer to do it. This opens the door to program restructuring."],["What keeps you up at night from a business risk perspective?","Save this for the end. The answer is your proposal."]],
+obs:["Are there visible census tracking boards or occupancy dashboards accessible to leadership?","Does the facility appear appropriately staffed relative to its visible census?","Is there evidence of active marketing efforts?","Do staff appear aware of organizational goals and direction?","Is there evidence of a succession or continuity planning process?"],
+scoring:[["Census level and trend","Below 85%; declining or flat","85-90%; stable or slowly recovering","Above 90%; stable or growing"],["Referral source concentration","1-2 sources = majority of referrals","3-5 sources; some concentration","Diversified; no single source > 25% of census"],["Ownership succession","No plan; single principal; no documented pathway","Informal awareness; not documented","Documented succession and licensing transition plan"],["Key-person dependency","DON or admin = census/regulatory linchpin, no plan","Aware of dependency; no formal mitigation","Cross-trained coverage; documented transition plans"],["Total cost of risk awareness","Premium-only focus; never calculated","Partial calculation; not used strategically","Calculated and used in decision-making"]],
+anchor:"Whos Next + LITT Framework - Strategic Continuity for Senior Housing Operators",anchorText:"In senior housing, succession planning is a regulatory and market positioning issue as much as a leadership development one. Whos Next provides the framework for mapping these dependencies and protecting enterprise value through planned and documented succession at every organizational level."}];
+
+const EKEY="riskmap-v1-engagements",PKEY="riskmap-v1-profiles",DKEY="riskmap-v1-docs",PMKEY="riskmap-v1-premeet",IQKEY="riskmap-v1-interview",OBKEY="riskmap-v1-obs",SCKEY="riskmap-v1-scores",SYKEY="riskmap-v1-synth",RPKEY="riskmap-v1-report";
+const FTYPES=["AL","MC","SNF","CCRC","Home Health","Other"],OWN_TYPES=["Family-owned","Private equity","Nonprofit","REIT-linked","Other"];
+const DOCS=[{id:"loss3",name:"Loss Runs",sub:"3-year history",critical:true},{id:"mod",name:"Mod History",sub:"Experience modification worksheet",critical:true},{id:"dec",name:"Policy Dec Pages",sub:"All active lines",critical:true},{id:"osha",name:"OSHA 300 Logs",sub:"3 years",critical:true},{id:"survey",name:"Survey History",sub:"State and CMS surveys",critical:true},{id:"prop",name:"Property Schedule",sub:"Locations and values",critical:true},{id:"cyber",name:"Cyber Declarations",sub:"Cyber liability coverage",critical:true},{id:"fin",name:"Financials",sub:"Most recent audited statements",critical:true},{id:"org",name:"Org Chart",sub:"Current leadership structure",critical:false},{id:"ben",name:"Benefits Summary",sub:"Employee benefits plan design",critical:false},{id:"tech",name:"Technology Inventory",sub:"Systems and vendors",critical:false},{id:"res",name:"Resident Agreement",sub:"Standard resident contract",critical:false},{id:"bi",name:"BI Worksheet",sub:"Business interruption analysis",critical:false},{id:"emp",name:"Employee Handbook",sub:"Current version",critical:false}];
+const CRIT=DOCS.filter(d=>d.critical),SUPP=DOCS.filter(d=>!d.critical);
+const READINESS_ITEMS=["All 6 domain scorecards rated with justification notes","All critical documents received or formally noted","Interview notes captured for all six domains","Site observations recorded for all six domains","Top 3 priority findings identified and written","Overall risk narrative drafted","Consulting pathway recommendation confirmed","Ready to generate report draft"];
+function initForm(){return{clientName:"",facilityType:"",numLocations:"1",primaryContactName:"",primaryContactTitle:"",siteVisitDate:new Date().toISOString().split("T")[0],advisorName:"Ken Leatherman",notes:""}}
+function initProfile(){return{ownershipStructure:"",numBeds:"",census:"",licenseTypes:"",states:"",yearsOp:"",renewalGL:"",renewalProp:"",renewalEPL:"",renewalCyber:"",contact2Name:"",contact2Title:"",contact2Email:"",notes:""}}
+function initDocs(){const d={};DOCS.forEach(doc=>{d[doc.id]="none"});return d}
+function initPM(){return{notes:Object.fromEntries(DOMAINS.map(d=>[d.code,""])),items:Object.fromEntries(DOMAINS.map(d=>[d.code,new Array(d.preMeet.length).fill(false)])),summary:"",priority:""}}
+function initIQ(){return Object.fromEntries(DOMAINS.map(d=>[d.code,d.qs.map(()=>({response:"",flag:null}))]))}
+function initObs(){return Object.fromEntries(DOMAINS.map(d=>[d.code,d.obs.map(()=>({flag:null,notes:""}))]))}
+function initScores(){return Object.fromEntries(DOMAINS.map(d=>[d.code,{rating:"",trend:"",justification:"",keyFinding:"",action1:"",action2:"",complete:false}]))}
+function initSynth(){return{overallNarrative:"",priority1:"",priority2:"",priority3:"",surveyContext:"",censusContext:"",docsOutstanding:"",consultingPathway:"",nextSteps:"",readiness:new Array(READINESS_ITEMS.length).fill(false)}}
+function initReport(){return{execSummary:"",d1:"",d2:"",d3:"",d4:"",d5:"",d6:"",nextSteps:"",status:"not-generated",generatedAt:null}}
+
+function StatusBadge({s}){const c={"In Progress":"b-amber","Draft Report":"b-blue","Complete":"b-green"};return h("span",{className:`badge ${c[s]||"b-amber"}`},s)}
+function EngBanner({eng}){return h("div",{className:"eng-banner"},h("div",null,h("div",{className:"eng-banner-name"},eng.clientName),h("div",{className:"eng-banner-meta"},`${eng.facilityType} - ${eng.numLocations} location(s) - Site visit: ${eng.siteVisitDate}`)),h(StatusBadge,{s:eng.status}))}
+function DomainTabs({active,setActive,scores}){return h("div",{className:"dtabs"},DOMAINS.map(d=>{const done=scores&&scores[d.code]&&scores[d.code].complete;return h("button",{key:d.code,className:`dtab${active===d.code?" active":""}`,style:active===d.code?{borderBottomColor:d.accent,color:d.accent}:{},onClick:()=>setActive(d.code)},d.short+(done?" v":""))}))}
+function FlagButtons({value,onChange}){return h("div",{className:"flag-row"},[{v:"Green",cls:"flag-g"},{v:"Yellow",cls:"flag-y"},{v:"Red",cls:"flag-r"}].map(f=>h("button",{key:f.v,className:`flag-btn ${f.cls}${value===f.v?" on":""}`,onClick:()=>onChange(value===f.v?null:f.v)},f.v)))}
+
+function Sidebar({view,openEngId,onNav}){
+const main=[{label:"Dashboard",id:"dashboard"},{label:"New Engagement",id:"new"}];
+const engNav=openEngId?[{label:"Client Profile",id:"profile"},{label:"Document Tracker",id:"docs"},{label:"Pre-Meeting Analysis",id:"premeet"},{label:"Interview Workspace",id:"interview"},{label:"Site Observation",id:"obs"},{label:"Domain Scorecards",id:"scores"},{label:"Synthesis",id:"synth"},{label:"Report Builder",id:"report"}]:[];
+return h("div",{className:"rm-sidebar"},
+h("div",{className:"rm-logo"},h("p",{className:"rm-logo-title"},"RiskMap"),h("p",{className:"rm-logo-sub"},"V1 - AJ Gallagher")),
+h("nav",{className:"rm-nav"},
+h("div",{className:"rm-nav-section"},"Engagement"),
+main.map(item=>h("button",{key:item.id,className:`rm-nav-btn${view===item.id?" active":""}`,onClick:()=>onNav(item.id)},h("span",{className:"rm-dot"}),item.label)),
+openEngId&&h(React.Fragment,null,
+h("div",{className:"rm-nav-section",style:{marginTop:6}},"Current Engagement"),
+engNav.map(item=>h("button",{key:item.id,className:`rm-nav-btn${view===item.id?" active":""}`,onClick:()=>onNav(item.id)},h("span",{className:"rm-dot"}),item.label))
+)),
+h("div",{className:"rm-version"},"Build 3.0 - All 10 Screens"))}
+
+function Dashboard({engagements,loading,onNew,onOpen}){
+const ip=engagements.filter(x=>x.status==="In Progress").length,co=engagements.filter(x=>x.status==="Complete").length;
+return h(React.Fragment,null,
+h("div",{className:"rm-header"},h("div",null,h("p",{className:"rm-header-title"},"Dashboard"),h("p",{className:"rm-header-sub"},"Active RiskMap engagements")),h("button",{className:"btn-p",onClick:onNew},"+ New Engagement")),
+h("div",{className:"rm-scroll"},h("div",{className:"rm-content"},
+h("div",{className:"stats-grid"},h("div",{className:"stat-card"},h("div",{className:"stat-label"},"Total"),h("div",{className:"stat-val"},engagements.length)),h("div",{className:"stat-card"},h("div",{className:"stat-label"},"In Progress"),h("div",{className:"stat-val"},ip)),h("div",{className:"stat-card"},h("div",{className:"stat-label"},"Complete"),h("div",{className:"stat-val"},co))),
+loading?h("div",{style:{textAlign:"center",padding:"40px",fontSize:12,color:"var(--color-text-secondary)"}},"Loading..."):
+engagements.length===0?h("div",{className:"empty-state"},h("p",{className:"empty-h"},"No engagements yet"),h("p",{className:"empty-p"},"Create your first RiskMap engagement to get started."),h("button",{className:"btn-p",onClick:onNew},"Create First Engagement")):
+h("div",{className:"tbl-wrap"},h("table",{className:"tbl"},
+h("thead",null,h("tr",null,["Client","Type","Site Visit","Status","Contact",""].map(c=>h("th",{key:c},c)))),
+h("tbody",null,engagements.map(eng=>h("tr",{key:eng.id},
+h("td",null,h("div",{style:{fontWeight:500,fontSize:12}},eng.clientName),h("div",{style:{fontSize:11,color:"var(--color-text-secondary)"}},eng.numLocations+" location(s)")),
+h("td",null,h("span",{className:"badge b-blue"},eng.facilityType)),
+h("td",{style:{color:"var(--color-text-secondary)"}},eng.siteVisitDate),
+h("td",null,h(StatusBadge,{s:eng.status})),
+h("td",{style:{color:"var(--color-text-secondary)"}},eng.primaryContactName),
+h("td",null,h("button",{className:"btn-o",onClick:()=>onOpen(eng.id)},"Open"))
+)))))
+)))}
+
+function NewEngagement({form,setForm,errors,saving,onSubmit,onCancel}){
+const set=f=>ev=>setForm(x=>({...x,[f]:ev.target.value}));
+const inp=(f,xtra={})=>h("input",{className:`fi${errors[f]?" err":""}`,value:form[f],onChange:set(f),...xtra});
+const err=f=>errors[f]&&h("span",{className:"fe"},errors[f]);
+return h(React.Fragment,null,
+h("div",{className:"rm-header"},h("div",null,h("p",{className:"rm-header-title"},"New Engagement"),h("p",{className:"rm-header-sub"},"Create a new RiskMap engagement record"))),
+h("div",{className:"rm-scroll"},h("div",{className:"rm-content"},h("div",{className:"form-wrap"},
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Client Information"),h("div",{className:"fg"},
+h("div",{className:"ff full"},h("label",{className:"fl req"},"Client / Organization Name"),inp("clientName",{placeholder:"e.g. Sunrise Senior Living - Portland"}),err("clientName")),
+h("div",{className:"ff"},h("label",{className:"fl req"},"Facility Type"),h("select",{className:`fi${errors.facilityType?" err":""}`,value:form.facilityType,onChange:set("facilityType")},h("option",{value:""},"Select type..."),...FTYPES.map(t=>h("option",{key:t},t))),err("facilityType")),
+h("div",{className:"ff"},h("label",{className:"fl"},"Number of Locations"),inp("numLocations",{type:"number",min:"1"})))),
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Primary Contact"),h("div",{className:"fg"},
+h("div",{className:"ff"},h("label",{className:"fl req"},"Contact Name"),inp("primaryContactName",{placeholder:"Full name"}),err("primaryContactName")),
+h("div",{className:"ff"},h("label",{className:"fl"},"Contact Title"),inp("primaryContactTitle",{placeholder:"e.g. CEO, Administrator"})))),
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Engagement Details"),h("div",{className:"fg"},
+h("div",{className:"ff"},h("label",{className:"fl req"},"Site Visit Date"),inp("siteVisitDate",{type:"date"}),err("siteVisitDate")),
+h("div",{className:"ff"},h("label",{className:"fl"},"Advisor Name"),inp("advisorName")),
+h("div",{className:"ff full"},h("label",{className:"fl"},"Initial Notes"),h("textarea",{className:"fi",rows:3,value:form.notes,onChange:set("notes"),style:{resize:"vertical"}})))),
+h("div",{className:"form-actions"},h("button",{className:"btn-p",onClick:onSubmit,disabled:saving},saving?"Saving...":"Create Engagement"),h("button",{className:"btn-s",onClick:onCancel},"Cancel"))
+))))}
+
+function ClientProfile({eng,profile,setProfile,onSave,saving}){
+const set=f=>ev=>setProfile(x=>({...x,[f]:ev.target.value}));
+const fld=(lbl,f,xtra={})=>h("div",{className:"ff"},h("label",{className:"fl"},lbl),h("input",{className:"fi",value:profile[f]||"",onChange:set(f),...xtra}));
+const fld2=(lbl,f,xtra={})=>h("div",{className:"ff full"},h("label",{className:"fl"},lbl),h("input",{className:"fi",value:profile[f]||"",onChange:set(f),...xtra}));
+return h(React.Fragment,null,
+h("div",{className:"rm-header"},h("div",null,h("p",{className:"rm-header-title"},"Client Profile"),h("p",{className:"rm-header-sub"},"Operator facts and coverage renewal dates")),h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save")),
+h("div",{className:"rm-scroll"},h("div",{className:"rm-content"},h(EngBanner,{eng}),h("div",{className:"form-wrap",style:{maxWidth:640}},
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Organizational Facts"),h("div",{className:"fg"},
+h("div",{className:"ff"},h("label",{className:"fl"},"Ownership Structure"),h("select",{className:"fi",value:profile.ownershipStructure||"",onChange:set("ownershipStructure")},h("option",{value:""},"Select..."),...OWN_TYPES.map(t=>h("option",{key:t},t)))),
+fld("Licensed Beds (total)","numBeds",{type:"number",placeholder:"e.g. 120"}),fld("Census %","census",{placeholder:"e.g. 87"}),
+fld("License Types","licenseTypes",{placeholder:"e.g. AL, MC, SNF"}),fld("State(s) of Operation","states",{placeholder:"e.g. OR, WA, CA"}),fld("Years in Operation","yearsOp",{type:"number"}))),
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Coverage Renewal Dates"),h("div",{className:"fg"},
+fld("General Liability","renewalGL",{type:"date"}),fld("Property","renewalProp",{type:"date"}),fld("Employment Practices","renewalEPL",{type:"date"}),fld("Cyber Liability","renewalCyber",{type:"date"}))),
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Additional Contacts"),h("div",{className:"fg"},
+fld("Name","contact2Name",{placeholder:"Secondary contact"}),fld("Title","contact2Title"),fld2("Email","contact2Email",{type:"email"}))),
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Advisor Notes"),h("div",{className:"fg"},h("div",{className:"ff full"},h("textarea",{className:"fi",rows:4,value:profile.notes||"",onChange:set("notes"),style:{resize:"vertical"}})))),
+h("div",{className:"form-actions"},h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save"))
+))))}
+
+function DocTracker({eng,docs,setDocs,onSave,saving}){
+function toggle(id,status){setDocs(d=>({...d,[id]:d[id]===status?"none":status}))}
+const SL={requested:"Requested",received:"Received",reviewed:"Reviewed",overdue:"Overdue",na:"Not Available"};
+const critCleared=CRIT.filter(d=>docs[d.id]==="received"||docs[d.id]==="reviewed").length;
+const pct=Math.round(critCleared/CRIT.length*100);
+function DocSection({title,docList}){return h(React.Fragment,null,h("div",{className:"doc-section-hd"},title),
+docList.map(doc=>{const s=docs[doc.id]||"none";return h("div",{key:doc.id,className:"doc-row"},
+h("div",null,h("div",{style:{display:"flex",alignItems:"center",gap:6}},h("span",{className:"doc-name"},doc.name),doc.critical&&h("span",{className:"crit-pill"},"Critical")),h("div",{className:"doc-sub"},doc.sub)),
+h("div",{style:{fontSize:11,color:"var(--color-text-secondary)",textAlign:"right",whiteSpace:"nowrap"}},s!=="none"?SL[s]:"Not set"),
+h("div",{style:{display:"flex",gap:3,flexWrap:"wrap",justifyContent:"flex-end"}},["requested","received","reviewed","overdue","na"].map(status=>h("button",{key:status,className:`dsb${s===status?" s-"+status:""}`,onClick:()=>toggle(doc.id,status)},SL[status])))
+)}))}
+return h(React.Fragment,null,
+h("div",{className:"rm-header"},h("div",null,h("p",{className:"rm-header-title"},"Document Request Tracker"),h("p",{className:"rm-header-sub"},"14 document types - 8 critical")),h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save")),
+h("div",{className:"rm-scroll"},h("div",{className:"rm-content"},h(EngBanner,{eng}),
+h("div",{className:"ready-bar-wrap"},
+h("div",{className:"ready-label"},h("span",null,"Interview readiness - critical documents"),h("span",{style:{fontWeight:500,color:pct===100?"var(--color-text-success)":"var(--color-text-primary)"}},`${critCleared}/${CRIT.length} cleared (${pct}%)`)),
+h("div",{className:"ready-track"},h("div",{className:"ready-fill",style:{width:pct+"%",background:pct===100?"var(--color-text-success)":"#BA7517"}}))
+),
+h("div",{className:"tbl-wrap"},h(DocSection,{title:"Critical - Required for Interview Readiness",docList:CRIT}),h(DocSection,{title:"Supporting - Collect When Available",docList:SUPP})),
+h("div",{className:"form-actions"},h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save"))
+)))}
+
+function PreMeeting({eng,pm,setPM,onSave,saving}){
+const [ad,setAD]=useState("D1");
+const dom=DOMAINS.find(d=>d.code===ad);
+const items=pm.items[ad]||[];
+function toggleItem(i){setPM(p=>{const it={...p.items,[ad]:[...(p.items[ad]||[])]};it[ad][i]=!it[ad][i];return{...p,items:it}})}
+return h(React.Fragment,null,
+h("div",{className:"rm-header"},h("div",null,h("p",{className:"rm-header-title"},"Pre-Meeting Analysis"),h("p",{className:"rm-header-sub"},"Complete before the site visit")),h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save")),
+h("div",{className:"rm-scroll"},h("div",{className:"rm-content"},h(EngBanner,{eng}),h(DomainTabs,{active:ad,setActive:setAD}),
+h("div",{style:{fontWeight:500,fontSize:13,color:dom.accent,marginBottom:4}},dom.name),
+h("div",{style:{fontSize:11,color:"var(--color-text-secondary)",marginBottom:14}},dom.sub),
+h("div",{className:"pm-section"},h("div",{className:"fs-title",style:{marginBottom:10}},"Pre-Meeting Checklist"),
+dom.preMeet.map((item,i)=>h("label",{key:i,className:`pm-check-item${items[i]?" done":""}`},h("input",{type:"checkbox",checked:!!items[i],onChange:()=>toggleItem(i)}),item))),
+h("div",{className:"ff",style:{marginBottom:16}},h("label",{className:"fl"},"Domain Analysis Notes"),h("textarea",{className:"fi",rows:5,value:pm.notes[ad]||"",onChange:e=>setPM(p=>({...p,notes:{...p.notes,[ad]:e.target.value}})),placeholder:`Patterns observed for ${dom.short}...`,style:{resize:"vertical"}})),
+ad==="D1"&&h(React.Fragment,null,
+h("div",{className:"ff",style:{marginBottom:16}},h("label",{className:"fl"},"Overall Preliminary Risk Signals"),h("textarea",{className:"fi",rows:4,value:pm.summary||"",onChange:e=>setPM(p=>({...p,summary:e.target.value})),placeholder:"Key patterns and signals observed across all documents before the interview...",style:{resize:"vertical"}})),
+h("div",{className:"ff"},h("label",{className:"fl"},"Priority Questions to Cover in Interview"),h("textarea",{className:"fi",rows:3,value:pm.priority||"",onChange:e=>setPM(p=>({...p,priority:e.target.value})),placeholder:"Which questions must you ask based on what you have seen in the documents?",style:{resize:"vertical"}}))
+),
+h("div",{className:"form-actions"},h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save"))
+)))}
+
+function InterviewWorkspace({eng,iq,setIQ,onSave,saving}){
+const [ad,setAD]=useState("D1");
+const dom=DOMAINS.find(d=>d.code===ad);
+const domIQ=iq[ad]||dom.qs.map(()=>({response:"",flag:null}));
+function updateQ(i,field,val){setIQ(q=>{const next={...q,[ad]:[...domIQ]};next[ad][i]={...next[ad][i],[field]:val};return next})}
+return h(React.Fragment,null,
+h("div",{className:"rm-header"},h("div",null,h("p",{className:"rm-header-title"},"Interview Workspace"),h("p",{className:"rm-header-sub"},"Capture responses and signal flags by domain")),h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save")),
+h("div",{className:"rm-scroll"},h("div",{className:"rm-content"},h(EngBanner,{eng}),h(DomainTabs,{active:ad,setActive:setAD}),
+h("div",{style:{fontWeight:500,fontSize:13,color:dom.accent,marginBottom:14}},dom.name+" - "+dom.qs.length+" questions"),
+dom.qs.map(([q,note],i)=>{const entry=domIQ[i]||{response:"",flag:null};return h("div",{key:i,className:"q-card"},
+h("div",{className:"q-num"},"Question "+(i+1)+" of "+dom.qs.length),
+h("div",{className:"q-text"},q),
+h("div",{className:"q-note"},note),
+h(FlagButtons,{value:entry.flag,onChange:v=>updateQ(i,"flag",v)}),
+h("textarea",{className:"fi",rows:3,value:entry.response,onChange:e=>updateQ(i,"response",e.target.value),placeholder:"Notes and findings...",style:{resize:"vertical"}})
+)}),
+h("div",{className:"form-actions"},h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save"))
+)))}
+
+function SiteObservation({eng,obs,setObs,onSave,saving}){
+const [ad,setAD]=useState("D1");
+const dom=DOMAINS.find(d=>d.code===ad);
+const domObs=obs[ad]||dom.obs.map(()=>({flag:null,notes:""}));
+function updateObs(i,field,val){setObs(o=>{const next={...o,[ad]:[...domObs]};next[ad][i]={...next[ad][i],[field]:val};return next})}
+return h(React.Fragment,null,
+h("div",{className:"rm-header"},h("div",null,h("p",{className:"rm-header-title"},"Site Observation"),h("p",{className:"rm-header-sub"},"Record what you see during the facility walk-through")),h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save")),
+h("div",{className:"rm-scroll"},h("div",{className:"rm-content"},h(EngBanner,{eng}),h(DomainTabs,{active:ad,setActive:setAD}),
+h("div",{style:{fontWeight:500,fontSize:13,color:dom.accent,marginBottom:14}},dom.name),
+dom.obs.map((item,i)=>{const entry=domObs[i]||{flag:null,notes:""};return h("div",{key:i,className:"obs-item"},
+h("div",{className:"obs-text"},item),
+h(FlagButtons,{value:entry.flag,onChange:v=>updateObs(i,"flag",v)}),
+h("textarea",{className:"fi",rows:2,value:entry.notes,onChange:e=>updateObs(i,"notes",e.target.value),placeholder:"Observation notes...",style:{resize:"vertical",marginTop:8}})
+)}),
+h("div",{className:"form-actions"},h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save"))
+)))}
+
+function DomainScorecards({eng,scores,setScores,iq,obs,onSave,saving}){
+const [ad,setAD]=useState("D1");
+const dom=DOMAINS.find(d=>d.code===ad);
+const sc=scores[ad]||{rating:"",trend:"",justification:"",keyFinding:"",action1:"",action2:"",complete:false};
+function upSC(field,val){setScores(s=>({...s,[ad]:{...sc,[field]:val}}))}
+function markDone(){if(!sc.rating||!sc.trend||!sc.justification.trim())return;setScores(s=>({...s,[ad]:{...sc,complete:true}}))}
+const domIQ=iq[ad]||[],domObs=obs[ad]||[];
+const fIQ=domIQ.filter(q=>q.flag),fObs=domObs.filter(o=>o.flag);
+const flagCls=f=>f==="Green"?"sig-g":f==="Yellow"?"sig-y":"sig-r";
+const canDone=sc.rating&&sc.trend&&sc.justification.trim().length>0;
+return h(React.Fragment,null,
+h("div",{className:"rm-header"},h("div",null,h("p",{className:"rm-header-title"},"Domain Scorecards"),h("p",{className:"rm-header-sub"},"Assign ratings, trends, and justifications")),
+h("div",{style:{display:"flex",gap:8,alignItems:"center"}},sc.complete&&h("span",{className:"complete-chip"},"v "+ad+" Complete"),h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save"))),
+h("div",{className:"rm-scroll"},h("div",{className:"rm-content"},h(EngBanner,{eng}),h(DomainTabs,{active:ad,setActive:setAD,scores}),
+h("div",{style:{fontWeight:500,fontSize:13,color:dom.accent,marginBottom:2}},dom.name),
+h("div",{style:{fontSize:11,color:"var(--color-text-secondary)",marginBottom:16}},dom.sub),
+h("div",{className:"sc-section"},h("div",{className:"sc-section-title"},"Workbook Scoring Criteria"),
+h("table",{className:"score-table"},h("thead",null,h("tr",null,h("th",null,"Indicator"),h("th",{className:"th-h"},"High"),h("th",{className:"th-m"},"Moderate"),h("th",{className:"th-mg"},"Managed"))),
+h("tbody",null,dom.scoring.map((row,i)=>h("tr",{key:i},row.map((cell,j)=>h("td",{key:j},cell))))))),
+(fIQ.length>0||fObs.length>0)&&h("div",{className:"sc-section"},
+fIQ.length>0&&h("div",{className:"sig-sum"},h("div",{className:"sig-sum-title"},"Interview Signal Flags"),fIQ.map((q,i)=>h("div",{key:i,className:"sig-row"},h("div",{className:"sig-q"},dom.qs[domIQ.indexOf(q)]?.[0]||"-"),h("span",{className:`sig-badge ${flagCls(q.flag)}`},q.flag)))),
+fObs.length>0&&h("div",{className:"sig-sum"},h("div",{className:"sig-sum-title"},"Site Observation Flags"),fObs.map((o,i)=>h("div",{key:i,className:"sig-row"},h("div",{className:"sig-q"},dom.obs[domObs.indexOf(o)]||"-"),h("span",{className:`sig-badge ${flagCls(o.flag)}`},o.flag))))),
+h("div",{className:"sc-section"},
+h("div",{className:"sc-section-title"},"Advisor Rating - Required"),
+h("div",{className:"rating-row"},h("button",{className:`r-btn r-high${sc.rating==="High"?" sel":""}`,onClick:()=>upSC("rating","High")},"High Exposure"),h("button",{className:`r-btn r-mod${sc.rating==="Moderate"?" sel":""}`,onClick:()=>upSC("rating","Moderate")},"Moderate Exposure"),h("button",{className:`r-btn r-managed${sc.rating==="Managed"?" sel":""}`,onClick:()=>upSC("rating","Managed")},"Managed")),
+h("div",{className:"sc-section-title"},"Trend Direction - Required"),
+h("div",{className:"trend-row"},["Improving","Stable","Declining"].map(t=>h("button",{key:t,className:`t-btn${sc.trend===t?" sel":""}`,onClick:()=>upSC("trend",t)},t)))),
+h("div",{className:"sc-section"},h("div",{className:"sc-section-title"},"Justification Note - Required"),h("textarea",{className:"fi",rows:4,value:sc.justification,onChange:e=>upSC("justification",e.target.value),placeholder:"Your reasoning for this rating...",style:{resize:"vertical"}}),!sc.justification.trim()&&h("div",{className:"req-note"},"Required before scorecard can be marked complete")),
+h("div",{className:"sc-section"},h("div",{className:"sc-section-title"},"Key Finding for Report"),h("textarea",{className:"fi",rows:3,value:sc.keyFinding,onChange:e=>upSC("keyFinding",e.target.value),placeholder:"The headline finding for this domain in the client report...",style:{resize:"vertical"}})),
+h("div",{className:"sc-section"},
+h("div",{style:{marginBottom:10}},h("label",{className:"fl",style:{marginBottom:6,display:"block"}},"Action 1"),h("textarea",{className:"fi",rows:2,value:sc.action1,onChange:e=>upSC("action1",e.target.value),placeholder:"First recommended action...",style:{resize:"vertical"}})),
+h("div",null,h("label",{className:"fl",style:{marginBottom:6,display:"block"}},"Action 2"),h("textarea",{className:"fi",rows:2,value:sc.action2,onChange:e=>upSC("action2",e.target.value),placeholder:"Second recommended action...",style:{resize:"vertical"}}))),
+h("div",{className:"form-actions"},
+canDone&&!sc.complete&&h("button",{className:"btn-p",onClick:markDone},"Mark "+ad+" Complete"),
+sc.complete&&h("span",{className:"complete-chip",style:{padding:"7px 14px",borderRadius:6,fontSize:11}},"v Complete"),
+h("button",{className:"btn-s",onClick:onSave,disabled:saving},saving?"Saving...":"Save"))
+)))}
+
+function Synthesis({eng,synth,setSynth,scores,onSave,saving}){
+const set=f=>v=>setSynth(s=>({...s,[f]:v}));
+const ratingColor=r=>r==="High"?"#A32D2D":r==="Moderate"?"#854F0B":r==="Managed"?"#0F6E56":"var(--color-text-secondary)";
+const trendSym=t=>t==="Improving"?"Improving":t==="Declining"?"Worsening":"Flat";
+const allDone=DOMAINS.every(d=>scores[d.code]&&scores[d.code].complete);
+return h(React.Fragment,null,
+h("div",{className:"rm-header"},h("div",null,h("p",{className:"rm-header-title"},"Post-Interview Synthesis"),h("p",{className:"rm-header-sub"},"Complete before generating the report draft")),h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save")),
+h("div",{className:"rm-scroll"},h("div",{className:"rm-content"},h(EngBanner,{eng}),
+!allDone&&h("div",{className:"alert-warn"},"Some domain scorecards are not yet complete. Finish all six before generating the report."),
+h("div",{className:"sc-section"},h("div",{className:"sc-section-title"},"Domain Rating Summary"),
+h("table",{className:"synth-rating-table"},
+h("thead",null,h("tr",null,h("th",null,"Domain"),h("th",null,"Rating"),h("th",null,"Trend"),h("th",null,"Status"))),
+h("tbody",null,DOMAINS.map(d=>{const sc=scores[d.code]||{};return h("tr",{key:d.code},
+h("td",{style:{color:d.accent,fontWeight:500,fontSize:12}},d.name),
+h("td",{style:{color:ratingColor(sc.rating),fontWeight:500,fontSize:12}},sc.rating||"-"),
+h("td",{style:{fontSize:12,color:"var(--color-text-secondary)"}},sc.trend?trendSym(sc.trend):"-"),
+h("td",null,sc.complete?h("span",{className:"complete-chip"},"v Done"):h("span",{style:{fontSize:10,color:"var(--color-text-tertiary)"}},"Incomplete")))})))),
+h("div",{className:"form-wrap",style:{maxWidth:640}},
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Overall Risk Narrative"),h("textarea",{className:"fi",rows:5,value:synth.overallNarrative||"",onChange:e=>set("overallNarrative")(e.target.value),placeholder:"Synthesize the dominant risk themes across all six domains...",style:{resize:"vertical"}})),
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Top 3 Priority Findings"),["priority1","priority2","priority3"].map((f,i)=>h("div",{key:f,style:{marginBottom:10}},h("label",{className:"fl"},"Priority "+(i+1)),h("textarea",{className:"fi",rows:2,value:synth[f]||"",onChange:e=>set(f)(e.target.value),placeholder:"Priority finding "+(i+1)+"...",style:{resize:"vertical"}})))),
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Survey & Regulatory Context"),h("textarea",{className:"fi",rows:3,value:synth.surveyContext||"",onChange:e=>set("surveyContext")(e.target.value),placeholder:"Key observations from survey history...",style:{resize:"vertical"}})),
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Census & Occupancy Context"),h("textarea",{className:"fi",rows:3,value:synth.censusContext||"",onChange:e=>set("censusContext")(e.target.value),placeholder:"Census observations that affect the strategic risk rating...",style:{resize:"vertical"}})),
+h("div",{className:"fs"},
+h("div",{className:"fs-title"},"Consulting Engagement Pathway"),
+h("select",{className:"fi",value:synth.consultingPathway||"",onChange:e=>set("consultingPathway")(e.target.value),style:{marginBottom:10}},h("option",{value:""},"Select pathway..."),["Advisory","Program Design","Ongoing Monitoring"].map(p=>h("option",{key:p},p))),
+h("textarea",{className:"fi",rows:3,value:synth.nextSteps||"",onChange:e=>set("nextSteps")(e.target.value),placeholder:"Proposed next steps and follow-up commitments with dates...",style:{resize:"vertical"}})),
+h("div",{className:"fs"},h("div",{className:"fs-title"},"Report Readiness Checklist"),
+READINESS_ITEMS.map((item,i)=>h("label",{key:i,className:`pm-check-item${(synth.readiness||[])[i]?" done":""}`},
+h("input",{type:"checkbox",checked:!!(synth.readiness||[])[i],onChange:()=>setSynth(s=>{const r=[...(s.readiness||new Array(READINESS_ITEMS.length).fill(false))];r[i]=!r[i];return{...s,readiness:r}})}),item))),
+h("div",{className:"form-actions"},h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save Synthesis"))
+)))}
+
+function ReportBuilder({eng,scores,synth,report,setReport,onSave,saving}){
+const [generating,setGenerating]=useState(false);
+const [genError,setGenError]=useState(null);
+async function generateDraft(){
+setGenerating(true);setGenError(null);
+const domSummary=DOMAINS.map(d=>{const sc=scores[d.code]||{};return `${d.name}\nRating: ${sc.rating||"Not rated"} | Trend: ${sc.trend||"Not set"}\nKey Finding: ${sc.keyFinding||"(none entered)"}\nActions: ${[sc.action1,sc.action2].filter(Boolean).join("; ")||"(none)"}`}).join("\n\n");
+const prompt=`You are generating a RiskMap 2.0 Senior Housing Edition diagnostic report for Ken Leatherman, Senior Advisor at Arthur J. Gallagher & Co.\n\nWrite in Ken's voice: direct, authoritative, practitioner-grounded, specific. Connect findings to financial and operational consequences. Never use generic filler.\n\nCLIENT: ${eng.clientName}\nFACILITY: ${eng.facilityType} | ${eng.numLocations} location(s) | Site visit: ${eng.siteVisitDate}\n\nDOMAIN FINDINGS:\n${domSummary}\n\nOVERALL NARRATIVE: ${synth.overallNarrative||"(not provided)"}\nTOP PRIORITIES:\n1. ${synth.priority1||"(not entered)"}\n2. ${synth.priority2||"(not entered)"}\n3. ${synth.priority3||"(not entered)"}\nCONSULTING PATHWAY: ${synth.consultingPathway||"Advisory"}\n\nReturn ONLY valid JSON:\n{"execSummary":"3 paragraphs: engagement context, pattern connecting domain findings, most important upstream driver","d1":"2 paragraphs current state + 5 risk bullets each starting with a dash for Care Culture & Leadership Risk","d2":"same structure for Human Capital & Workforce Risk","d3":"same structure for Physical Plant & Operational Risk","d4":"same structure for Professional & Regulatory Liability","d5":"same structure for Technology & AI Governance Risk","d6":"same structure for Strategic & Census Risk","nextSteps":"1 paragraph on next steps and engagement model for this specific client"}`;
+try{
+const resp=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,messages:[{role:"user",content:prompt}]})});
+const data=await resp.json();
+const text=data.content?.filter(b=>b.type==="text").map(b=>b.text).join("")||"";
+const clean=text.replace(/```json|```/g,"").trim();
+const parsed=JSON.parse(clean);
+setReport(r=>({...r,...parsed,status:"draft",generatedAt:new Date().toISOString()}));
+}catch(e){setGenError("Generation failed. Verify all scorecards have ratings and key findings, then try again.")}
+setGenerating(false);}
+
+function exportWord(){
+const rColor=r=>r==="High"?"#C0392B":r==="Moderate"?"#E67E22":"#27AE60";
+const tSym=t=>t==="Improving"?"Improving":t==="Declining"?"Worsening":"Flat";
+let html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:11pt;line-height:1.5;margin:1in;color:#222}h1{font-size:22pt;color:#1a3a5c;text-align:center}h2{font-size:15pt;color:#1a3a5c;border-bottom:2pt solid #1a3a5c;padding-bottom:4pt;margin-top:28pt}h3{font-size:12pt;color:#1a3a5c;margin-top:14pt}table{border-collapse:collapse;width:100%;margin:10pt 0}th{background:#1a3a5c;color:white;padding:6pt 8pt;text-align:left;font-size:10pt}td{border:0.5pt solid #ccc;padding:6pt 8pt;font-size:10pt}.anchor{border-left:4pt solid #B8860B;padding:8pt 12pt;margin:12pt 0;background:#FDFDF5;font-size:10pt;font-style:italic;color:#555}.warn{background:#FFFBF0;border:0.5pt solid #E8B84D;padding:8pt 12pt;margin:12pt 0;font-size:10pt}p{margin:0 0 8pt}</style></head><body>`;
+html+=`<h1>RISKMAP 2.0</h1><p style="text-align:center;color:#666">The Road to Organizational Security</p><p style="text-align:center;font-size:14pt;font-weight:bold;color:#1a3a5c">SENIOR HOUSING EDITION</p><br><p style="text-align:center;font-size:14pt;font-weight:bold">${eng.clientName}</p><p style="text-align:center;color:#666">${eng.facilityType} | ${eng.numLocations} Location(s) | ${eng.siteVisitDate}</p><br><p style="text-align:center">Prepared by: <strong>Ken Leatherman</strong></p><p style="text-align:center;color:#666">Senior Advisor | Arthur J. Gallagher & Co.</p><p style="text-align:center;color:#666"><em>Minimize Risk. Maximize Performance.</em></p>`;
+html+=`<div class="warn">ADVISOR REVIEW REQUIRED - This is a first-draft report. All narrative sections must be reviewed and edited before client delivery.</div>`;
+html+=`<h2>Executive Summary</h2><table><thead><tr><th>Assessment Area</th><th>Exposure Rating</th><th>Trend</th></tr></thead><tbody>`;
+DOMAINS.forEach(d=>{const sc=scores[d.code]||{};html+=`<tr><td>${d.name}</td><td style="color:${rColor(sc.rating)};font-weight:bold">${sc.rating||"-"}</td><td>${sc.trend?tSym(sc.trend):"-"}</td></tr>`});
+html+=`</tbody></table><p>${(report.execSummary||"").replace(/\n/g,"</p><p>")}</p>`;
+DOMAINS.forEach(d=>{const sc=scores[d.code]||{};html+=`<h2>${d.name}</h2><p style="color:#666;font-size:10pt">${d.sub}</p><p style="color:${rColor(sc.rating)};font-weight:bold">Rating: ${sc.rating||"-"} | Trend: ${sc.trend?tSym(sc.trend):"-"}</p><h3>Current State Assessment</h3><p>${(report[d.code.toLowerCase()]||"(Not generated)").replace(/\n- /g,"</p><p>- ").replace(/\n/g,"</p><p>")}</p><div class="anchor"><strong>METHODOLOGY ANCHOR | ${d.anchor}</strong><br>${d.anchorText}</div><h3>Priority Actions</h3><p>${sc.action1||""}</p><p>${sc.action2||""}</p>`});
+html+=`<h2>Next Steps</h2><p>${(report.nextSteps||"").replace(/\n/g,"</p><p>")}</p><hr><p style="text-align:center;color:#666">Ken Leatherman | Senior Advisor | Arthur J. Gallagher & Co. | Minimize Risk. Maximize Performance.</p></body></html>`;
+const blob=new Blob([html],{type:"application/msword"});
+const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`RiskMap-${eng.clientName.replace(/[^a-z0-9]/gi,"_")}.doc`;a.click();URL.revokeObjectURL(url);}
+
+function copyAll(){
+const sections=[{key:"execSummary",label:"EXECUTIVE SUMMARY"},...DOMAINS.map(d=>({key:d.code.toLowerCase(),label:d.name.toUpperCase()})),{key:"nextSteps",label:"NEXT STEPS"}];
+const text=`RISKMAP 2.0\n${eng.clientName} | ${eng.siteVisitDate}\n\n${sections.map(s=>`${s.label}\n\n${report[s.key]||"(not generated)"}`).join("\n\n---\n\n")}`;
+navigator.clipboard.writeText(text).catch(()=>{});}
+
+const sections=[{key:"execSummary",label:"Executive Summary",rows:8},...DOMAINS.map(d=>({key:d.code.toLowerCase(),label:d.name,rows:10,accent:d.accent,code:d.code})),{key:"nextSteps",label:"Next Steps & Engagement Model",rows:5}];
+return h(React.Fragment,null,
+h("div",{className:"rm-header"},
+h("div",null,h("p",{className:"rm-header-title"},"Report Builder"),h("p",{className:"rm-header-sub"},report.status==="draft"?"Draft generated - review and edit all sections before exporting":"Generate a first-draft report from your scorecard data")),
+h("div",{style:{display:"flex",gap:8,flexWrap:"wrap"}},
+report.status==="draft"&&h("button",{className:"btn-s",onClick:copyAll},"Copy Text"),
+report.status==="draft"&&h("button",{className:"btn-s",onClick:exportWord},"Download Word"),
+h("button",{className:"btn-p",onClick:generating?null:generateDraft,disabled:generating},generating?h(React.Fragment,null,h("span",{className:"gen-spinner"}),"Generating..."):(report.status==="draft"?"Regenerate Draft":"Generate Draft")))),
+h("div",{className:"rm-scroll"},h("div",{className:"rm-content"},
+h(EngBanner,{eng}),
+genError&&h("div",{style:{background:"var(--color-background-danger)",color:"var(--color-text-danger)",padding:"10px 14px",borderRadius:6,marginBottom:16,fontSize:12}},genError),
+generating&&h("div",{className:"gen-block"},h("div",{className:"gen-spinner",style:{width:24,height:24,borderWidth:3,margin:"0 auto 12px"}}),h("div",{style:{fontSize:13,color:"var(--color-text-secondary)",marginBottom:4}},"Generating report draft..."),h("div",{style:{fontSize:11,color:"var(--color-text-tertiary)"}},"This takes 20-40 seconds.")),
+!generating&&report.status==="not-generated"&&h("div",{className:"empty-state"},h("p",{className:"empty-h"},"Report not yet generated"),h("p",{className:"empty-p",style:{maxWidth:400,margin:"0 auto 18px"}},"Complete your domain scorecards and synthesis, then click Generate Draft."),h("button",{className:"btn-p",onClick:generateDraft},"Generate Draft Report")),
+!generating&&report.status!=="not-generated"&&h(React.Fragment,null,
+h("div",{className:"alert-warn"},"All narrative sections require your review and editing before this report is delivered to a client."),
+h("div",{className:"form-wrap",style:{maxWidth:680}},
+sections.map(sec=>h("div",{key:sec.key,className:"fs"},
+h("div",{className:"report-section-label",style:sec.accent?{color:sec.accent}:{}},sec.label,sec.code&&h("span",{style:{fontSize:10,color:"var(--color-text-tertiary)",fontWeight:400}},`${scores[sec.code]?.rating||""} ${scores[sec.code]?.trend?"|":""} ${scores[sec.code]?.trend||""}`.trim())),
+h("textarea",{className:"fi",rows:sec.rows,value:report[sec.key]||"",onChange:e=>setReport(r=>({...r,[sec.key]:e.target.value})),placeholder:`${sec.label} will appear here after generation...`,style:{resize:"vertical",lineHeight:1.6}}))),
+h("div",{className:"form-actions"},h("button",{className:"btn-p",onClick:exportWord},"Download as Word"),h("button",{className:"btn-s",onClick:copyAll},"Copy All Text"),h("button",{className:"btn-s",onClick:onSave,disabled:saving},saving?"Saving...":"Save Draft"))
+)))))}
+
+function App(){
+const [view,setView]=useState("dashboard");
+const [engagements,setEngagements]=useState([]);
+const [loading,setLoading]=useState(true);
+const [saving,setSaving]=useState(false);
+const [form,setForm]=useState(initForm());
+const [errors,setErrors]=useState({});
+const [openEngId,setOpenEngId]=useState(null);
+const [profiles,setProfiles]=useState({});
+const [docSets,setDocSets]=useState({});
+const [pmSets,setPMSets]=useState({});
+const [iqSets,setIQSets]=useState({});
+const [obSets,setObSets]=useState({});
+const [scoreSets,setScoreSets]=useState({});
+const [synthSets,setSynthSets]=useState({});
+const [reportSets,setReportSets]=useState({});
+useEffect(()=>{(async()=>{
+const load=async(key,def)=>{try{const v=localStorage.getItem(key);return v?JSON.parse(v):def}catch(e){return def}};
+const [engs,profs,docs,pms,iqs,obs,scores,synths,reps]=await Promise.all([load(EKEY,[]),load(PKEY,{}),load(DKEY,{}),load(PMKEY,{}),load(IQKEY,{}),load(OBKEY,{}),load(SCKEY,{}),load(SYKEY,{}),load(RPKEY,{})]);
+setEngagements(engs);setProfiles(profs);setDocSets(docs);setPMSets(pms);setIQSets(iqs);setObSets(obs);setScoreSets(scores);setSynthSets(synths);setReportSets(reps);
+setLoading(false);})();},[]);
+async function persist(key,data){try{localStorage.setItem(key,JSON.stringify(data))}catch(e){}}
+function validate(){const er={};if(!form.clientName.trim())er.clientName="Required";if(!form.facilityType)er.facilityType="Required";if(!form.primaryContactName.trim())er.primaryContactName="Required";if(!form.siteVisitDate)er.siteVisitDate="Required";return er}
+async function handleCreate(){
+const er=validate();if(Object.keys(er).length){setErrors(er);return}
+setSaving(true);
+const eng={id:Date.now().toString(),...form,status:"In Progress",createdAt:new Date().toISOString()};
+const updEngs=[eng,...engagements];setEngagements(updEngs);await persist(EKEY,updEngs);
+const np={...profiles,[eng.id]:initProfile()};setProfiles(np);await persist(PKEY,np);
+const nd={...docSets,[eng.id]:initDocs()};setDocSets(nd);await persist(DKEY,nd);
+const npm={...pmSets,[eng.id]:initPM()};setPMSets(npm);await persist(PMKEY,npm);
+const niq={...iqSets,[eng.id]:initIQ()};setIQSets(niq);await persist(IQKEY,niq);
+const nob={...obSets,[eng.id]:initObs()};setObSets(nob);await persist(OBKEY,nob);
+const nsc={...scoreSets,[eng.id]:initScores()};setScoreSets(nsc);await persist(SCKEY,nsc);
+const nsy={...synthSets,[eng.id]:initSynth()};setSynthSets(nsy);await persist(SYKEY,nsy);
+const nrp={...reportSets,[eng.id]:initReport()};setReportSets(nrp);await persist(RPKEY,nrp);
+setSaving(false);setForm(initForm());setErrors({});setOpenEngId(eng.id);setView("profile");}
+function onNav(id){if(id==="dashboard")setOpenEngId(null);if(id==="new"){setForm(initForm());setErrors({})}setView(id)}
+function makeSet(setter,key){return(eid)=>(updater)=>{setter(prev=>{const cur=prev[eid];const next={...prev,[eid]:typeof updater==="function"?updater(cur):updater};persist(key,next);return next})}}
+async function saveFor(key,state){setSaving(true);await persist(key,state);setSaving(false)}
+const eid=openEngId||"";
+const openEng=engagements.find(x=>x.id===eid);
+const profile=profiles[eid]||initProfile();
+const docs=docSets[eid]||initDocs();
+const pm=pmSets[eid]||initPM();
+const iq=iqSets[eid]||initIQ();
+const ob=obSets[eid]||initObs();
+const sc=scoreSets[eid]||initScores();
+const synth=synthSets[eid]||initSynth();
+const report=reportSets[eid]||initReport();
+const setProfileFor=makeSet(setProfiles,PKEY)(eid);
+const setDocsFor=makeSet(setDocSets,DKEY)(eid);
+const setPMFor=makeSet(setPMSets,PMKEY)(eid);
+const setIQFor=makeSet(setIQSets,IQKEY)(eid);
+const setObFor=makeSet(setObSets,OBKEY)(eid);
+const setScFor=makeSet(setScoreSets,SCKEY)(eid);
+const setSynthFor=makeSet(setSynthSets,SYKEY)(eid);
+const setReportFor=makeSet(setReportSets,RPKEY)(eid);
+return h("div",{className:"rm-app"},
+h(Sidebar,{view,openEngId,onNav}),
+h("div",{className:"rm-main"},
+view==="dashboard"&&h(Dashboard,{engagements,loading,onNew:()=>onNav("new"),onOpen:id=>{setOpenEngId(id);setView("profile")}}),
+view==="new"&&h(NewEngagement,{form,setForm,errors,saving,onSubmit:handleCreate,onCancel:()=>setView("dashboard")}),
+openEng&&view==="profile"&&h(ClientProfile,{eng:openEng,profile,setProfile:setProfileFor,onSave:()=>saveFor(PKEY,profiles),saving}),
+openEng&&view==="docs"&&h(DocTracker,{eng:openEng,docs,setDocs:setDocsFor,onSave:()=>saveFor(DKEY,docSets),saving}),
+openEng&&view==="premeet"&&h(PreMeeting,{eng:openEng,pm,setPM:setPMFor,onSave:()=>saveFor(PMKEY,pmSets),saving}),
+openEng&&view==="interview"&&h(InterviewWorkspace,{eng:openEng,iq,setIQ:setIQFor,onSave:()=>saveFor(IQKEY,iqSets),saving}),
+openEng&&view==="obs"&&h(SiteObservation,{eng:openEng,obs:ob,setObs:setObFor,onSave:()=>saveFor(OBKEY,obSets),saving}),
+openEng&&view==="scores"&&h(DomainScorecards,{eng:openEng,scores:sc,setScores:setScFor,iq,obs:ob,onSave:()=>saveFor(SCKEY,scoreSets),saving}),
+openEng&&view==="synth"&&h(Synthesis,{eng:openEng,synth,setSynth:setSynthFor,scores:sc,onSave:()=>saveFor(SYKEY,synthSets),saving}),
+openEng&&view==="report"&&h(ReportBuilder,{eng:openEng,scores:sc,synth,report,setReport:setReportFor,onSave:()=>saveFor(RPKEY,reportSets),saving})
+))}
+ReactDOM.createRoot(document.getElementById("app")).render(h(App));
+</script>
+</body>
+</html>
