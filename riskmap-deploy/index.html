@@ -559,7 +559,7 @@ h("div",{className:"fs"},h("div",{className:"fs-title"},"Report Readiness Checkl
 READINESS_ITEMS.map((item,i)=>h("label",{key:i,className:`pm-check-item${(synth.readiness||[])[i]?" done":""}`},
 h("input",{type:"checkbox",checked:!!(synth.readiness||[])[i],onChange:()=>setSynth(s=>{const r=[...(s.readiness||new Array(READINESS_ITEMS.length).fill(false))];r[i]=!r[i];return{...s,readiness:r}})}),item))),
 h("div",{className:"form-actions"},h("button",{className:"btn-p",onClick:onSave,disabled:saving},saving?"Saving...":"Save Synthesis"))
-)))}
+))))}
 
 function ReportBuilder({eng,scores,synth,report,setReport,onSave,saving}){
 const [generating,setGenerating]=useState(false);
